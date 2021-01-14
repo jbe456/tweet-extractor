@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "license": "MIT",
+  "bin": {
+    "uke": "dist/index"
+  },
+  "dependencies": {
+    "@types/cache-manager": "^2.10.3",
+    "@types/cli-table": "^0.3.0",
+    "@types/lodash": "^4.14.155",
+    "@types/node-fetch": "^2.5.7",
+    "cache-manager": "^3.3.0",
+    "cache-manager-fs": "^1.0.8",
+    "cli-table": "^0.3.1",
+    "csv": "^5.3.2",
+    "lodash": "^4.17.15",
+    "node-fetch": "^2.6.1",
+    "node-html-parser": "^2.0.0",
+    "pkg": "^4.4.9",
+    "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.13",
+    "@types/yargs": "^15.0.5",
+    "typescript": "^3.9.5"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./dist/index"
+  }
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+uke-cache/
+*.csv
+.ipynb_checkpoints/
+*.ipynb
