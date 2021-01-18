@@ -162,6 +162,8 @@ export const extract = async ({
   cachePath,
   sleep,
   bucket,
+  limit,
+  token,
 }: ExtractOptions) => {
   const cache = await setupCache({
     days: cacheExpiry,
@@ -169,13 +171,16 @@ export const extract = async ({
   });
 
   let urlsToScan = urls;
+  let csv;
   if (input && columnName) {
     const inputFile = fs.readFileSync(input, { encoding: "utf-8" });
-    const csv = parseCSV(inputFile, { columns: true });
+    csv = parseCSV(inputFile, { columns: true });
     urlsToScan = csv.map((row: any) => row[columnName]);
   }
-  const authToken =
-    "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+
+  if (limit > 0) {
+    urlsToScan = urlsToScan.slice(0, limit);
+  }
 
   const urlsBuckets = _.chunk(urlsToScan, bucket);
 
@@ -185,18 +190,18 @@ export const extract = async ({
 
   const results = [];
   for (let i = 0; i < urlsBuckets.length; i++) {
-    console.log(`Before ${i}`);
+    console.log(`Batch ${i}`);
     const bucket = urlsBuckets[i];
-    const guestToken = await getGuestToken(authToken);
+    const guestToken = await getGuestToken(token);
     const urlInfos = await extractUrls({
       urlsToScan: bucket,
       cache,
       guestToken,
-      authToken,
+      authToken: token,
       sleep,
     });
     results.push(urlInfos);
-    console.log(`After ${i}`);
+    console.log(`End of batch ${i}`);
   }
 
   const urlInfos = _.flatten(results);
@@ -210,13 +215,44 @@ export const extract = async ({
     filePath = defaultFileName;
   }
 
-  const csvHeaders = getCSVHeaders();
-  exportData({
-    content: `${csvHeaders}\n${toCSVContent({
-      urlInfos,
-    })}`,
-    filePath,
-  });
+  if (csv) {
+    const currentHeaders = _.keys(csv[0]).filter(
+      (x: string) => x !== columnName
+    );
+    const csvHeaders = [columnName, ...getCSVHeaders(), ...currentHeaders].join(
+      ","
+    );
 
-  printExtractSummary({ filePath, urlInfos });
+    const rowsByUrl = _.mapKeys(csv, (row: any) => row.url);
+
+    const csvContent = urlInfos
+      .map((u) =>
+        [
+          u.url,
+          u.retweet_count,
+          u.favorite_count,
+          u.reply_count,
+          u.quote_count,
+          ...currentHeaders.map(
+            (head: string) => `"${rowsByUrl[u.url][head]}"`
+          ),
+        ].join(",")
+      )
+      .join(`\n`);
+
+    exportData({
+      content: `${csvHeaders}\n${csvContent}`,
+      filePath,
+    });
+  } else {
+    const csvHeaders = ["url", ...getCSVHeaders()].join(",");
+    exportData({
+      content: `${csvHeaders}\n${toCSVContent({
+        urlInfos,
+      })}`,
+      filePath,
+    });
+  }
+
+  printExtractSummary({ filePath, urlInfos, limit });
 };

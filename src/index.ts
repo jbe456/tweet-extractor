@@ -64,6 +64,12 @@ yargs
           type: "number",
           default: 1000,
           description: "Path to the cache folder.",
+        })
+        .option("limit", {
+          type: "number",
+          default: -1,
+          description:
+            "Maximum numbers of tweets to process or -1 to disable this parameter.",
         });
     },
     extract

@@ -9,11 +9,13 @@ export type ExtractOptions = {
   urls?: string[];
   input?: string;
   columnName?: string;
+  token: string;
   output: string;
   cacheExpiry: number;
   cachePath: string;
   sleep: number;
   bucket: number;
+  limit: number;
 };
 
 type ExportOptions = {
@@ -44,13 +46,7 @@ export const exportData = ({ content, filePath }: ExportOptions) => {
 };
 
 export const getCSVHeaders = () => {
-  return [
-    "url",
-    "retweet_count",
-    "favorite_count",
-    "reply_count",
-    "quote_count",
-  ].join(",");
+  return ["retweet_count", "favorite_count", "reply_count", "quote_count"];
 };
 
 export const toCSVContent = ({ urlInfos }: { urlInfos: UrlInfo[] }) => {
@@ -91,9 +87,14 @@ export const setupCache = async ({
 export const printExtractSummary = ({
   filePath,
   urlInfos,
+  limit,
 }: {
   filePath: string;
   urlInfos: UrlInfo[];
+  limit: number;
 }) => {
-  console.log(`${urlInfos.length} urls scanned exported at ${filePath}!`);
+  const size = limit > 0 ? Math.min(limit, urlInfos.length) : urlInfos.length;
+  console.log(
+    `${size}/${urlInfos.length} urls scanned exported at ${filePath}!`
+  );
 };
