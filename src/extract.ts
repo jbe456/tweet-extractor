@@ -97,16 +97,56 @@ const extractUrls = async ({
   const urlInfos: UrlInfo[] = await Promise.all(
     urlsToScan.map(async (url) => {
       const tweetId = tweetUrlRegex.exec(url)[1];
-      const resultJson = await getTweetInfo({
-        cache,
-        authToken,
-        guestToken,
-        tweetId,
-        sleep,
-      });
 
-      if (resultJson.errors) {
-        console.log(resultJson.errors);
+      try {
+        const resultJson = await getTweetInfo({
+          cache,
+          authToken,
+          guestToken,
+          tweetId,
+          sleep,
+        });
+
+        if (resultJson.errors) {
+          console.log(resultJson.errors);
+          return {
+            url,
+            retweet_count: -1,
+            favorite_count: -1,
+            reply_count: -1,
+            quote_count: -1,
+          };
+        }
+
+        const kpis = _.map(
+          resultJson.globalObjects.tweets,
+          (tweet: any, id: string) => ({
+            url,
+            retweet_count: tweet.retweet_count,
+            favorite_count: tweet.favorite_count,
+            reply_count: tweet.reply_count,
+            quote_count: tweet.quote_count,
+          })
+        );
+
+        return kpis.reduce(
+          (result, info) => ({
+            url,
+            retweet_count: info.retweet_count + result.retweet_count,
+            favorite_count: info.favorite_count + result.favorite_count,
+            reply_count: info.reply_count + result.reply_count,
+            quote_count: info.quote_count + result.quote_count,
+          }),
+          {
+            url,
+            retweet_count: 0,
+            favorite_count: 0,
+            reply_count: 0,
+            quote_count: 0,
+          }
+        );
+      } catch (e) {
+        console.log(e);
         return {
           url,
           retweet_count: -1,
@@ -115,34 +155,6 @@ const extractUrls = async ({
           quote_count: -1,
         };
       }
-
-      const kpis = _.map(
-        resultJson.globalObjects.tweets,
-        (tweet: any, id: string) => ({
-          url,
-          retweet_count: tweet.retweet_count,
-          favorite_count: tweet.favorite_count,
-          reply_count: tweet.reply_count,
-          quote_count: tweet.quote_count,
-        })
-      );
-
-      return kpis.reduce(
-        (result, info) => ({
-          url,
-          retweet_count: info.retweet_count + result.retweet_count,
-          favorite_count: info.favorite_count + result.favorite_count,
-          reply_count: info.reply_count + result.reply_count,
-          quote_count: info.quote_count + result.quote_count,
-        }),
-        {
-          url,
-          retweet_count: 0,
-          favorite_count: 0,
-          reply_count: 0,
-          quote_count: 0,
-        }
-      );
     })
   );
 
@@ -223,8 +235,9 @@ export const extract = async ({
       ","
     );
 
-    const rowsByUrl = _.mapKeys(csv, (row: any) => row.url);
+    const rowsByUrl = _.mapKeys(csv, (row: any) => row[columnName]);
 
+    console.log(rowsByUrl);
     const csvContent = urlInfos
       .map((u) =>
         [
@@ -233,9 +246,9 @@ export const extract = async ({
           u.favorite_count,
           u.reply_count,
           u.quote_count,
-          ...currentHeaders.map(
-            (head: string) => `"${rowsByUrl[u.url][head]}"`
-          ),
+          ...currentHeaders.map((head: string) => {
+            return `"${_.get(rowsByUrl, [u.url, head])}"`;
+          }),
         ].join(",")
       )
       .join(`\n`);
