@@ -70,6 +70,12 @@ yargs
           default: -1,
           description:
             "Maximum numbers of tweets to process or -1 to disable this parameter.",
+        })
+        .option("debug", {
+          type: "boolean",
+          default: false,
+          description:
+            "Write the full JSON response for each tweet into a file name debug-$tweetId.json.",
         });
     },
     extract

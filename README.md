@@ -1,39 +1,42 @@
-## URL keywords extractor
+## Tweet extractor
 
-Extract URL keywords from urls
+Extract tweet metadatas
 
 ### CLI
 
 ```console
-> uke --help
-uke extract --help
+> te --help
+te extract --help
 
 Commands:
-  uke extract  Extract keywords from a list of one or multiple space separated
-               urls
+  te extract  Extract tweet infos from a list of one or multiple space separated
+              urls
 
 Options:
   --version  Show version number                                       [boolean]
   --help     Show help                                                 [boolean]
 
 Examples:
-  uke extract --urls urlA                   Extract keywords from a list of urls
-  uke extract --input urls.csv              Extract keywords from a list of urls
-  --columnName URL                          provided by urls.csv via column URL
+  te extract --urls urlA                    Extract tweet infos from a list of
+                                            urls
+  te extract --input urls.csv --columnName  Extract tweet infos from a list of
+  URL                                       urls provided by urls.csv via column
+                                            URL
 ```
 
 #### extract
 
 ```console
-> uke extract --help
-uke extract
+> te extract --help
+te extract
 
-Extract keywords from a list of one or multiple space separated urls
+Extract tweet infos from a list of one or multiple space separated urls
 
 Options:
   --version      Show version number                                   [boolean]
   --help         Show help                                             [boolean]
-  --urls         A list of space-separated urls to extract keywords from [array]
+  --urls         A list of space-separated urls to extract tweet infos from
+                                                                         [array]
   --input        CSV source to extract urls from                        [string]
   --columnName   Column name from input file to extract urls            [string]
   --output       Destination folder or file where CSV results are exported,
@@ -41,6 +44,12 @@ Options:
   --cacheExpiry  Number of days before cache entities expire.
                                                           [number] [default: 31]
   --cachePath    Path to the cache folder.       [number] [default: "uke-cache"]
+  --bucket       Path to the cache folder.                 [number] [default: 5]
+  --sleep        Path to the cache folder.              [number] [default: 1000]
+  --limit        Maximum numbers of tweets to process or -1 to disable this
+                 parameter.                               [number] [default: -1]
+  --debug        Write the full JSON response for each tweet into a file name
+                 debug-$tweetId.json.                 [boolean] [default: false]
 ```
 
 ### Troubleshoot

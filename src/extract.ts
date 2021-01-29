@@ -85,12 +85,14 @@ const extractUrls = async ({
   authToken,
   guestToken,
   sleep,
+  debug,
 }: {
   urlsToScan: string[];
   cache: Cache;
   authToken: string;
   guestToken: string;
   sleep: number;
+  debug: boolean;
 }) => {
   const urlInfos: UrlInfo[] = await Promise.all(
     urlsToScan.map(async (url) => {
@@ -104,6 +106,13 @@ const extractUrls = async ({
           tweetId,
           sleep,
         });
+
+        if (debug) {
+          fs.writeFileSync(
+            `./debug-${tweetId}.json`,
+            JSON.stringify(resultJson, null, 2)
+          );
+        }
 
         if (resultJson.errors) {
           console.log(resultJson.errors);
@@ -124,12 +133,12 @@ const extractUrls = async ({
         if (tweet.in_reply_to_status_id_str) {
           type = "REPLY";
           related_to = tweet.in_reply_to_status_id_str;
-        } else if (tweet.quoted_status_id_str) {
-          type = "QUOTE";
-          related_to = tweet.quoted_status_id_str;
         } else if (tweet.retweeted_status_id_str) {
           type = "RETWEET";
           related_to = tweet.retweeted_status_id_str;
+        } else if (tweet.quoted_status_id_str) {
+          type = "QUOTE";
+          related_to = tweet.quoted_status_id_str;
         }
 
         return {
@@ -174,6 +183,7 @@ export const extract = async ({
   bucket,
   limit,
   token,
+  debug,
 }: ExtractOptions) => {
   const cache = await setupCache({
     days: cacheExpiry,
@@ -209,6 +219,7 @@ export const extract = async ({
       guestToken,
       authToken: token,
       sleep,
+      debug,
     });
     results.push(urlInfos);
     console.log(`End of batch ${i}`);

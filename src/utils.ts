@@ -16,6 +16,7 @@ export type ExtractOptions = {
   sleep: number;
   bucket: number;
   limit: number;
+  debug: boolean;
 };
 
 type ExportOptions = {
