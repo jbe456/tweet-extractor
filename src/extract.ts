@@ -6,16 +6,14 @@ import {
   getCSVHeaders,
   ExtractOptions,
   UrlInfo,
-  ExtractUrlOptions,
   printExtractSummary,
+  TwitterResponse,
 } from "./utils";
-import _, { result } from "lodash";
+import _ from "lodash";
 import fetch from "node-fetch";
-import { parse as parseDom } from "node-html-parser";
 import fs from "fs";
 import parseCSV from "csv-parse/lib/sync";
 import { Cache } from "cache-manager";
-import { string } from "yargs";
 
 const getGuestToken = async (authToken: string) => {
   const result = await fetch(
@@ -99,7 +97,7 @@ const extractUrls = async ({
       const tweetId = tweetUrlRegex.exec(url)[1];
 
       try {
-        const resultJson = await getTweetInfo({
+        const resultJson: TwitterResponse = await getTweetInfo({
           cache,
           authToken,
           guestToken,
@@ -111,6 +109,8 @@ const extractUrls = async ({
           console.log(resultJson.errors);
           return {
             url,
+            type: "ERROR",
+            related_to: "",
             retweet_count: -1,
             favorite_count: -1,
             reply_count: -1,
@@ -118,37 +118,35 @@ const extractUrls = async ({
           };
         }
 
-        const kpis = _.map(
-          resultJson.globalObjects.tweets,
-          (tweet: any, id: string) => ({
-            url,
-            retweet_count: tweet.retweet_count,
-            favorite_count: tweet.favorite_count,
-            reply_count: tweet.reply_count,
-            quote_count: tweet.quote_count,
-          })
-        );
+        const tweet = resultJson.globalObjects.tweets[tweetId];
+        let type = "ORIGINAL";
+        let related_to = "";
+        if (tweet.in_reply_to_status_id_str) {
+          type = "REPLY";
+          related_to = tweet.in_reply_to_status_id_str;
+        } else if (tweet.quoted_status_id_str) {
+          type = "QUOTE";
+          related_to = tweet.quoted_status_id_str;
+        } else if (tweet.retweeted_status_id_str) {
+          type = "RETWEET";
+          related_to = tweet.retweeted_status_id_str;
+        }
 
-        return kpis.reduce(
-          (result, info) => ({
-            url,
-            retweet_count: info.retweet_count + result.retweet_count,
-            favorite_count: info.favorite_count + result.favorite_count,
-            reply_count: info.reply_count + result.reply_count,
-            quote_count: info.quote_count + result.quote_count,
-          }),
-          {
-            url,
-            retweet_count: 0,
-            favorite_count: 0,
-            reply_count: 0,
-            quote_count: 0,
-          }
-        );
+        return {
+          url,
+          type,
+          related_to,
+          retweet_count: tweet.retweet_count,
+          favorite_count: tweet.favorite_count,
+          reply_count: tweet.reply_count,
+          quote_count: tweet.quote_count,
+        };
       } catch (e) {
         console.log(e);
         return {
           url,
+          type: "ERROR",
+          related_to: "",
           retweet_count: -1,
           favorite_count: -1,
           reply_count: -1,
@@ -237,17 +235,18 @@ export const extract = async ({
 
     const rowsByUrl = _.mapKeys(csv, (row: any) => row[columnName]);
 
-    console.log(rowsByUrl);
     const csvContent = urlInfos
       .map((u) =>
         [
           u.url,
+          u.type,
           u.retweet_count,
           u.favorite_count,
           u.reply_count,
           u.quote_count,
+          u.related_to,
           ...currentHeaders.map((head: string) => {
-            return `"${_.get(rowsByUrl, [u.url, head])}"`;
+            return `"${rowsByUrl[u.url][head].replace(/"/g, '""')}"`;
           }),
         ].join(",")
       )

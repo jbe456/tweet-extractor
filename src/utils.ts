@@ -23,14 +23,46 @@ type ExportOptions = {
   filePath: string;
 };
 
-export type ExtractUrlOptions = { cache: Cache; url: string };
-
 export type UrlInfo = {
   url: string;
+  type: string;
+  related_to: string;
   retweet_count: number;
   favorite_count: number;
   reply_count: number;
   quote_count: number;
+};
+
+export type TwitterResponse = {
+  globalObjects: {
+    tweets: {
+      [key: string]: {
+        created_at: string;
+        id_str: string;
+        full_text: string;
+        display_text_range: any[];
+        entities: any[];
+        extended_entities?: any[];
+        source: string;
+        in_reply_to_status_id_str?: string;
+        in_reply_to_user_id_str?: string;
+        in_reply_to_screen_name?: string;
+        user_id_str: string;
+        is_quote_status?: boolean;
+        quoted_status_id_str?: string;
+        retweeted_status_id_str?: string;
+        quoted_status_permalink?: any;
+        retweet_count: number;
+        favorite_count: number;
+        reply_count: number;
+        quote_count: number;
+        conversation_id_str: string;
+        possibly_sensitive_editable?: boolean;
+        lang: string;
+      };
+    };
+  };
+  errors?: any;
 };
 
 export const exportData = ({ content, filePath }: ExportOptions) => {
@@ -46,7 +78,14 @@ export const exportData = ({ content, filePath }: ExportOptions) => {
 };
 
 export const getCSVHeaders = () => {
-  return ["retweet_count", "favorite_count", "reply_count", "quote_count"];
+  return [
+    "type",
+    "retweet_count",
+    "favorite_count",
+    "reply_count",
+    "quote_count",
+    "related_to",
+  ];
 };
 
 export const toCSVContent = ({ urlInfos }: { urlInfos: UrlInfo[] }) => {
@@ -54,10 +93,12 @@ export const toCSVContent = ({ urlInfos }: { urlInfos: UrlInfo[] }) => {
     .map((u) =>
       [
         u.url,
+        u.type,
         u.retweet_count,
         u.favorite_count,
         u.reply_count,
         u.quote_count,
+        u.related_to,
       ].join(",")
     )
     .join(`\n`);
