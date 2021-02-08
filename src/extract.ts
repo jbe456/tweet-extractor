@@ -73,7 +73,13 @@ const getTweetInfo = async ({
       method: "GET",
     });
 
-    return await result.json();
+    const text = await result.text();
+
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error(text);
+    }
   });
 };
 
@@ -151,7 +157,7 @@ const extractUrls = async ({
           quote_count: tweet.quote_count,
         };
       } catch (e) {
-        console.log(e);
+        console.log(e.message || e);
         return {
           url,
           type: "ERROR",
